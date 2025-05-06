@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quick Daily To-Do List</title>
+    <style>
+        :root {
+            --bg-color: #f5f5f5;
+            --text-color: #333;
+            --primary-color: #4a6fa5;
+            --secondary-color: #e2e8f0;
+            --accent-color: #718096;
+            --completed-color: #a0aec0;
+            --shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            --item-bg: #ffffff;
+            --item-border: 1px solid #e2e8f0;
+            --input-bg: #ffffff;
+            --header-bg: #ffffff;
+            --transition: all 0.3s ease;
+        }
+
+        [data-theme="dark"] {
+            --bg-color: #1a202c;
+            --text-color: #e2e8f0;
+            --primary-color: #63b3ed;
+            --secondary-color: #2d3748;
+            --accent-color: #a0aec0;
+            --completed-color: #718096;
+            --shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+            --item-bg: #2d3748;
+            --item-border: 1px solid #4a5568;
+            --input-bg: #2d3748;
+            --header-bg: #2d3748;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            line-height: 1.6;
+            transition: var(--transition);
+            min-height: 100vh;
+            padding: 1rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 1rem;
+        }
+
+        header {
+            background-color: var(--header-bg);
+            padding: 1.5rem;
+            border-radius: 12px;
+            box-shadow: var(--shadow);
+            margin-bottom: 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: var(--transition);
+        }
+
+        h1 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin: 0;
+        }
+
+        .theme-toggle {
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 1.25rem;
+            color: var(--text-color);
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            transition: var(--transition);
+        }
+
+        .theme-toggle:hover {
+            background-color: var(--secondary-color);
+        }
+
+        .input-container {
+            display: flex;
+            margin-bottom: 1.5rem;
+        }
+
+        #task-input {
+            flex: 1;
+            padding: 0.75rem 1rem;
+            border: var(--item-border);
+            border-radius: 8px 0 0 8px;
+            font-size: 1rem;
+            color: var(--text-color);
+            background-color: var(--input-bg);
+            transition: var(--transition);
+        }
+
+        #task-input:focus {
+            outline: none;
+            border-color: var(--primary-color);
+        }
+
+        #add-task-btn {
+            padding: 0.75rem 1rem;
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 0 8px 8px 0;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        #add-task-btn:hover {
+            opacity: 0.9;
+        }
+
+        #task-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .task-item {
+            background-color: var(--item-bg);
+            border-radius: 8px;
+            padding: 0.75rem 1rem;
+            margin-bottom: 0.75rem;
+            display: flex;
+            align-items: center;
+            box-shadow: var(--shadow);
+            cursor: grab;
+            transition: var(--transition);
+            animation: fadeIn 0.3s ease;
+            border: var(--item-border);
+        }
+
+        .task-item.dragging {
+            opacity: 0.5;
+            transform: scale(0.98);
+        }
+
+        .task-checkbox {
+            margin-right: 1rem;
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+        }
+
+        .task-text {
+            flex: 1;
+            background: none;
+            border: none;
+            font-size: 1rem;
+            color: var(--text-color);
+            padding: 0.25rem;
+            border-radius: 4px;
+            transition: var(--transition);
+        }
+
+        .task-text:focus {
+            outline: none;
+            background-color: var(--secondary-color);
+        }
+
+        .task-text.completed {
+            text-decoration: line-through;
+            color: var(--completed-color);
+        }
+
+        .delete-btn {
+            background: none;
+            border: none;
+            color: var(--accent-color);
+            cursor: pointer;
+            font-size: 1.125rem;
+            padding: 0.25rem;
+            margin-left: 0.5rem;
+            border-radius: 4px;
+            transition: var(--transition);
+        }
+
+        .delete-btn:hover {
+            color: #e53e3e;
+            background-color: var(--secondary-color);
+        }
+
+        footer {
+            margin-top: 2rem;
+            text-align: center;
+            color: var(--accent-color);
+            font-size: 0.875rem;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @media (max-width: 600px) {
+            header {
+                padding: 1rem;
+            }
+            
+            h1 {
+                font-size: 1.25rem;
+            }
+            
+            .container {
+                padding: 0.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Quick Daily To-Do List</h1>
+            <button class="theme-toggle" id="theme-toggle" aria-label="Toggle dark/light mode">
+                🌙
+            </button>
+        </header>
+
+        <div class="input-container">
+            <input 
+                type="text" 
+                id="task-input" 
+                placeholder="Add a new task..." 
+                aria-label="Enter a new task"
+            >
+            <button id="add-task-btn" aria-label="Add task">Add</button>
+        </div>
+
+        <ul id="task-list" aria-label="Task list"></ul>
+
+        <footer>
+            <p>Your tasks are stored locally on your device.</p>
+        </footer>
+    </div>
+
+    <script>
+        // Main app initialization
+        function initApp() {
+            // DOM Elements
+            const themeToggle = document.getElementById('theme-toggle');
+            const taskInput = document.getElementById('task-input');
+            const addTaskBtn = document.getElementById('add-task-btn');
+            const taskList = document.getElementById('task-list');
+            
+            // State
+            let tasks = [];
+            let draggedItem = null;
+            
+            // Initialize theme
+            function initTheme() {
+                const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+                const savedTheme = localStorage.getItem('theme');
+                
+                if (savedTheme) {
+                    document.documentElement.setAttribute('data-theme', savedTheme);
+                    updateThemeToggleButton(savedTheme);
+                } else if (prefersDark) {
+                    document.documentElement.setAttribute('data-theme', 'dark');
+                    updateThemeToggleButton('dark');
+                }
+            }
+            
+            function updateThemeToggleButton(theme) {
+                themeToggle.textContent = theme === 'dark' ? '☀️' : '🌙';
+            }
+            
+            // Load tasks from localStorage
+            function loadTasks() {
+                const savedTasks = localStorage.getItem('tasks');
+                if (savedTasks) {
+                    try {
+                        tasks = JSON.parse(savedTasks);
+                        renderTasks();
+                    } catch (e) {
+                        console.error('Error parsing saved tasks:', e);
+                        localStorage.removeItem('tasks');
+                        tasks = [];
+                    }
+                }
+            }
+            
+            // Save tasks to localStorage
+            function saveTasks() {
+                localStorage.setItem('tasks', JSON.stringify(tasks));
+            }
+            
+            // Render all tasks
+            function renderTasks() {
+                taskList.innerHTML = '';
+                
+                tasks.forEach((task, index) => {
+                    const taskItem = createTaskElement(task, index);
+                    taskList.appendChild(taskItem);
+                });
+            }
+            
+            // Create task element
+            function createTaskElement(task, index) {
+                const li = document.createElement('li');
+                li.classList.add('task-item');
+                li.setAttribute('draggable', 'true');
+                li.dataset.index = index;
+                
+                const checkbox = document.createElement('input');
+                checkbox.type = 'checkbox';
+                checkbox.classList.add('task-checkbox');
+                checkbox.checked = task.completed;
+                checkbox.setAttribute('aria-label', `Mark task ${task.text} as ${task.completed ? 'incomplete' : 'complete'}`);
+                
+                const textInput = document.createElement('input');
+                textInput.type = 'text';
+                textInput.classList.add('task-text');
+                if (task.completed) textInput.classList.add('completed');
+                textInput.value = task.text;
+                textInput.setAttribute('aria-label', `Task: ${task.text}`);
+                
+                const deleteBtn = document.createElement('button');
+                deleteBtn.classList.add('delete-btn');
+                deleteBtn.innerHTML = '&times;';
+                deleteBtn.setAttribute('aria-label', `Delete task: ${task.text}`);
+                
+                // Event listeners
+                checkbox.addEventListener('change', () => {
+                    toggleTaskCompletion(index);
+                });
+                
+                textInput.addEventListener('blur', () => {
+                    updateTaskText(index, textInput.value);
+                });
+                
+                textInput.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') {
+                        textInput.blur();
+                    }
+                });
+                
+                deleteBtn.addEventListener('click', () => {
+                    deleteTask(index);
+                });
+                
+                // Drag and drop
+                li.addEventListener('dragstart', handleDragStart);
+                li.addEventListener('dragover', handleDragOver);
+                li.addEventListener('dragenter', handleDragEnter);
+                li.addEventListener('dragleave', handleDragLeave);
+                li.addEventListener('drop', handleDrop);
+                li.addEventListener('dragend', handleDragEnd);
+                
+                li.appendChild(checkbox);
+                li.appendChild(textInput);
+                li.appendChild(deleteBtn);
+                
+                return li;
+            }
+            
+            // Add new task
+            function addTask(text) {
+                if (!text || text.trim() === '') return;
+                
+                const newTask = {
+                    id: Date.now(),
+                    text: text.trim(),
+                    completed: false
+                };
+                
+                tasks.push(newTask);
+                saveTasks();
+                renderTasks();
+                taskInput.value = '';
+                taskInput.focus();
+            }
+            
+            // Toggle task completion
+            function toggleTaskCompletion(index) {
+                tasks[index].completed = !tasks[index].completed;
+                saveTasks();
+                renderTasks();
+            }
+            
+            // Update task text
+            function updateTaskText(index, newText) {
+                if (newText.trim() === '') {
+                    deleteTask(index);
+                } else {
+                    tasks[index].text = newText.trim();
+                    saveTasks();
+                    renderTasks();
+                }
+            }
+            
+            // Delete task
+            function deleteTask(index) {
+                tasks.splice(index, 1);
+                saveTasks();
+                renderTasks();
+            }
+            
+            // Drag and drop functionality
+            function handleDragStart(e) {
+                draggedItem = this;
+                e.dataTransfer.effectAllowed = 'move';
+                e.dataTransfer.setData('text/html', this.innerHTML);
+                this.classList.add('dragging');
+            }
+            
+            function handleDragOver(e) {
+                e.preventDefault();
+                e.dataTransfer.dropEffect = 'move';
+                return false;
+            }
+            
+            function handleDragEnter(e) {
+                this.classList.add('drag-over');
+            }
+            
+            function handleDragLeave(e) {
+                this.classList.remove('drag-over');
+            }
+            
+            function handleDrop(e) {
+                e.stopPropagation();
+                
+                if (draggedItem !== this) {
+                    const fromIndex = parseInt(draggedItem.dataset.index);
+                    const toIndex = parseInt(this.dataset.index);
+                    
+                    // Reorder tasks array
+                    const movedTask = tasks.splice(fromIndex, 1)[0];
+                    tasks.splice(toIndex, 0, movedTask);
+                    
+                    saveTasks();
+                    renderTasks();
+                }
+                
+                return false;
+            }
+            
+            function handleDragEnd(e) {
+                this.classList.remove('dragging');
+                document.querySelectorAll('.task-item').forEach(item => {
+                    item.classList.remove('drag-over');
+                });
+            }
+            
+            // Set up event listeners
+            function setupEventListeners() {
+                // Theme toggle
+                themeToggle.addEventListener('click', () => {
+                    const currentTheme = document.documentElement.getAttribute('data-theme') || 'light';
+                    const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+                    
+                    document.documentElement.setAttribute('data-theme', newTheme);
+                    localStorage.setItem('theme', newTheme);
+                    updateThemeToggleButton(newTheme);
+                });
+                
+                // Add task button
+                addTaskBtn.addEventListener('click', () => {
+                    addTask(taskInput.value);
+                });
+                
+                // Add task on Enter key
+                taskInput.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter') {
+                        addTask(taskInput.value);
+                    }
+                });
+            }
+            
+            // Initialize the application
+            initTheme();
+            loadTasks();
+            setupEventListeners();
+        }
+        
+        // Start the app when the page is fully loaded
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initApp);
+        } else {
+            initApp();
+        }
+    </script>
+</body>
+</html>
